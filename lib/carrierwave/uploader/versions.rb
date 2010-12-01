@@ -35,9 +35,9 @@ module CarrierWave
             versions[name].version_names.push(*version_names)
             versions[name].version_names.push(name)
             class_eval <<-RUBY
-              def #{name}
-                versions[:#{name}]
-              end
+            def #{name}
+              versions[:#{name}]
+            end
             RUBY
           end
           versions[name].class_eval(&block) if block
@@ -118,7 +118,7 @@ module CarrierWave
         end
       end
 
-    private
+      private
 
       def full_filename(for_file)
         [version_name, super(for_file)].compact.join('_')
@@ -129,9 +129,14 @@ module CarrierWave
       end
 
       def cache_versions!(new_file)
-        versions.each do |name, v|
-          v.send(:cache_id=, cache_id)
-          v.cache!(new_file)
+        #if !new_file.content_type.nil? && is_image?(new_file)
+        if is_image?(new_file)
+          versions.each do |name, v|
+            #raise File.mime_type?(new_file.to_s)
+            #raise new_file.content_type
+            v.send(:cache_id=, cache_id)
+            v.cache!(new_file)
+          end
         end
       end
 
@@ -140,7 +145,9 @@ module CarrierWave
       end
 
       def remove_versions!
-        versions.each { |name, v| v.remove! }
+        if is_image?(new_file)
+          versions.each { |name, v| v.remove! }
+        end
       end
 
       def retrieve_versions_from_cache!(cache_name)
@@ -149,6 +156,16 @@ module CarrierWave
 
       def retrieve_versions_from_store!(identifier)
         versions.each { |name, v| v.retrieve_from_store!(identifier) }
+      end
+
+      # custom hack for images
+      def is_image?(new_file)
+        # conent type is nil from console so always version console images
+        if new_file.content_type.nil? || new_file.content_type.include?("image")
+          true
+        else
+          false
+        end
       end
 
     end # Versions
