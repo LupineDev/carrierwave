@@ -7,6 +7,10 @@ http://carrierwave.rubyforge.org
 This plugin for Merb and Rails provides a simple and extremely flexible way to
 upload files.
 
+== Special Branch: 0.4-selective_versioning
+
+On this branch if you upload files through a browser only images will be versioned.
+
 == Description
 
 * RDoc Documentation {available at Rubyforge}[http://carrierwave.rubyforge.org/rdoc].
@@ -123,6 +127,10 @@ If you're mounting the uploader, uploading a file with the wrong extension will 
 
 == Adding versions
 
+On this branch uploads from a browser will only be versioned if it is an image
+so the uploader can be used for different types of files.  This *only* happens 
+with uploads from the browser.
+
 Often you'll want to add different versions of the same file. The classic
 example is image thumbnails. There is built in support for this:
 
@@ -136,6 +144,8 @@ example is image thumbnails. There is built in support for this:
       end
 
     end
+
+Currently uploads from irb, rails console or a ruby script will *always* be versioned.
 
 When this uploader is used, an uploaded image would be scaled to be no larger
 than 800 by 800 pixels. A version called thumb is then created, which is scaled
