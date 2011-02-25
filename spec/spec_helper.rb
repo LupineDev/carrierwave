@@ -1,7 +1,7 @@
 # encoding: utf-8
 
-require "rubygems"
-require "bundler/setup"
+require 'rubygems'
+require 'bundler/setup'
 
 require 'tempfile'
 require 'time'
@@ -9,6 +9,15 @@ require 'logger'
 
 require 'carrierwave'
 require 'timecop'
+
+require 'fog'
+require 'storage/fog_helper'
+
+unless ENV['FOG_MOCK'] == 'false'
+  Fog.mock!
+end
+
+ENV['CARRIERWAVE_DIRECTORY'] ||= "carrierwave#{Time.now.to_i}"
 
 alias :running :lambda
 

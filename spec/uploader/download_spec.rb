@@ -8,7 +8,7 @@ describe CarrierWave::Uploader::Download do
     @uploader_class = Class.new(CarrierWave::Uploader::Base)
     @uploader = @uploader_class.new
   end
-  
+
   after do
     FileUtils.rm_rf(public_path)
   end
@@ -67,12 +67,26 @@ describe CarrierWave::Uploader::Download do
         @uploader.download!('/etc/passwd')
       }.should raise_error(CarrierWave::DownloadError)
     end
-    
+
     it "should accept spaces in the url" do
       @uploader.download!('http://www.example.com/test with spaces/file.png')
       @uploader.url.should == '/uploads/tmp/20071201-1234-345-2255/file.png'
     end
   end
 
-end
+  describe '#download! with an overridden process_uri method' do
+    before do
+      @uploader_class.class_eval do
+        def process_uri(uri)
+          raise CarrierWave::DownloadError
+        end
+      end
+    end
 
+    it "should allow overriding the process_uri method" do
+      running {
+        @uploader.download!('http://www.example.com/test/file.png')
+      }.should raise_error(CarrierWave::DownloadError)
+    end
+  end
+end
