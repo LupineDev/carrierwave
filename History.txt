@@ -1,14 +1,19 @@
-=== master (https://github.com/jnicklas/carrierwave/compare/v0.5.2...master)
+=== Version 0.5.3 2011-03-22
+
 * [changed] Cloud Files storage so delete and url return nil if object not found instead of exception [minter]
 * [added] New fog storage provider that supports Amazon S3, Rackspace Cloud Files, and Google Storare for Developers [geemus]
 * [added] cloud_files_auth_url and cloud_files_snet config options for Cloud Files [minter]
 * [added] process_uri method that can be overridden in your uploader to support downloads from non-standard urls [trevorturk]
+* [added] version urls to json output [karb]
+* [added] Active Record marks uploader column as changed when changed [josevalim]
 * [fixed] Cloud Files storage tests to use the new url format [minter]
 * [fixed] Moved raising of FormNotMultipart farther down to avoid errors with nested attribute forms [trevorturk]
 * [fixed] original_filename of remote uploads should be calculated from final (possibly redirected) URL [brady8]
 * [fixed] Fix calling :process! on files stored in remote solutions [alexcrichton]
+* [fixed] Fix paperclip compatibility mappings [valakirka]
+* [fixed] Ensure temporary files can be deleted on Windows [Eleo]
 
-=== Version 0.5.2 2010-02-18
+=== Version 0.5.2 2011-02-18
 
 * [changed] Require active_support/core_ext/string/multibyte to fix downcasing unicode filenames during sanitizing [nashbridges]
 * [changed] Use fog ~> 0.4, Fog::AWS::Storage.new -> Fog::Storage.new(:provider => 'AWS') [trevorturk]

@@ -17,11 +17,13 @@ module CarrierWave
     # You need to setup some options to configure your usage:
     #
     # [:fog_credentials]  credentials for service
-    # [:fog_directory]    specifies name of directory to store data in
+    # [:fog_directory]    specifies name of directory to store data in, assumed to already exist
     #
-    # [:fog_attributes]   (optional) additional attributes to set on files
-    # [:fog_host]         (optional) non-default host to serve files from
-    # [:fog_public]       (optional) public readability, defaults to true
+    # [:fog_attributes]                   (optional) additional attributes to set on files
+    # [:fog_host]                         (optional) non-default host to serve files from
+    # [:fog_public]                       (optional) public readability, defaults to true
+    # [:fog_authenticated_url_expiration] (optional) time (in seconds) that authenticated urls
+    #   will be valid, when fog_public is false and provider is AWS or Google, defaults to 600
     #
     #
     # AWS credentials contain the following keys:
@@ -29,7 +31,7 @@ module CarrierWave
     # [:aws_access_key_id]
     # [:aws_secret_access_key]
     # [:region]                 (optional) defaults to 'us-east-1'
-    #   :region should be one of ['eu-west-1', 'us-east-1', 'ap-southeast-1', 'us-west-1']
+    #   :region should be one of ['eu-west-1', 'us-east-1', 'ap-southeast-1', 'us-west-1', 'ap-northeast-1']
     #
     #
     # Google credentials contain the following keys:
@@ -133,8 +135,10 @@ module CarrierWave
         #
         def authenticated_url
           if ['AWS', 'Google'].include?(@uploader.fog_credentials[:provider])
-            # avoid a get by just using local reference
-            directory.files.new(:key => path).url(::Fog::Time.now + 60 * 10)
+            # avoid a get by using local references
+            local_directory = connection.directories.new(:key => @uploader.fog_directory)
+            local_file = local_directory.files.new(:key => path)
+            local_file.url(::Fog::Time.now + @uploader.fog_authenticated_url_expiration)
           else
             nil
           end
@@ -148,7 +152,7 @@ module CarrierWave
         # [String] value of content-type
         #
         def content_type
-          @content_type
+          @content_type || file.content_type
         end
 
         ##
@@ -170,7 +174,8 @@ module CarrierWave
         # [Boolean] true for success or raises error
         #
         def delete
-          file.destroy
+          # avoid a get by just using local reference
+          directory.files.new(:key => path).destroy
         end
 
         ##
@@ -220,10 +225,10 @@ module CarrierWave
         #
         # [Boolean] true on success or raises error
         def store(new_file)
-          self.content_type ||= new_file.content_type
+          @content_type ||= new_file.content_type
           @file = directory.files.create({
             :body         => new_file.read,
-            :content_type => content_type,
+            :content_type => @content_type,
             :key          => path,
             :public       => @uploader.fog_public
           }.merge(@uploader.fog_attributes))
@@ -243,8 +248,22 @@ module CarrierWave
           if host = @uploader.fog_host
             "#{host}/#{path}"
           else
-            # avoid a get by just using local reference
-            directory.files.new(:key => path).public_url
+            # AWS/Google optimized for speed over correctness
+            case @uploader.fog_credentials[:provider]
+            when 'AWS'
+              # if directory is a valid subdomain, use that style for access
+              if @uploader.fog_directory.to_s =~ /^(?:[a-z]|\d(?!\d{0,2}(?:\.\d{1,3}){3}$))(?:[a-z0-9]|\.(?![\.\-])|\-(?![\.])){1,61}[a-z0-9]$/
+                "https://#{@uploader.fog_directory}.s3.amazonaws.com/#{path}"
+              else
+                # directory is not a valid subdomain, so use path style for access
+                "https://s3.amazonaws.com/#{@uploader.fog_directory}/#{path}"
+              end
+            when 'Google'
+              "https://commondatastorage.googleapis.com/#{@uploader.fog_directory}/#{path}"
+            else
+              # avoid a get by just using local reference
+              directory.files.new(:key => path).public_url
+            end
           end
         end
 
@@ -279,7 +298,7 @@ module CarrierWave
         end
 
         ##
-        # lookup directory containing file
+        # local reference to directory containing file
         #
         # === Returns
         #
@@ -287,7 +306,7 @@ module CarrierWave
         #
         def directory
           @directory ||= begin
-            connection.directories.get(@uploader.fog_directory) || connection.directories.create(
+            connection.directories.new(
               :key    => @uploader.fog_directory,
               :public => @uploader.fog_public
             )
@@ -302,11 +321,7 @@ module CarrierWave
         # [Fog::#{provider}::File] file data from remote service
         #
         def file
-          @file ||= begin
-            file = directory.files.get(path)
-            self.content_type = file.content_type
-            file
-          end
+          @file ||= directory.files.get(path)
         end
 
       end

@@ -3,11 +3,6 @@
 This gem provides a simple and extremely flexible way to upload files from Ruby applications.
 It works well with Rack based web applications, such as Ruby on Rails.
 
-== Warning
-
-The following instructions are not valid for the currently release gem (v0.5.2).
-If you're using the gem version, please refer to {the 0.5.2 readme}[https://github.com/jnicklas/carrierwave/tree/v0.5.2] instead.
-
 == Information
 
 * RDoc documentation {available on RubyDoc.info}[http://rubydoc.info/gems/carrierwave/frames]
@@ -16,8 +11,8 @@ If you're using the gem version, please refer to {the 0.5.2 readme}[https://gith
 
 == Getting Help
 
-* Please direct any questions to the {mailing list}[http://groups.google.com/group/carrierwave]
-* Please report any issues on the {issue tracker}[http://github.com/jnicklas/carrierwave/issues]
+* Please ask the {Groogle Group}[http://groups.google.com/group/carrierwave] for help if you have any questions.
+* Please report bugs on the {issue tracker}[http://github.com/jnicklas/carrierwave/issues] but read the "getting help" section in the wiki first.
 
 == Installation
 
@@ -30,7 +25,7 @@ In Rails, add it to your Gemfile:
     gem 'carrierwave'
 
 Note that CarrierWave is not compatible with Rails 2 as of version 0.5. If you want to use
-Rails 2, please use the latest gem in the 0.4.X series.
+Rails 2, please use the 0.4-stable branch on GitHub.
 
 == Getting Started
 
@@ -95,6 +90,12 @@ automatically be stored when the record is saved.
     u.avatar.url # => '/url/to/file.png'
     u.avatar.current_path # => 'path/to/file.png'
 
+If using DataMapper, make sure to disable auto_validation on the mounted column.
+
+If using Mongoid, note that embedded documents files aren't saved when parent documents are saved.
+You must explicitly call save on embedded documents in order to save their attached files.
+You can read more about this {here}[https://github.com/jnicklas/carrierwave/issues#issue/81]
+
 == Changing the storage directory
 
 In order to change where uploaded files are put, just override the +store_dir+
@@ -153,7 +154,7 @@ contain Russian letters:
       end
     end
 
-Also make sure that allowing non-latin characters won't cause a compatibly issue with a third-party
+Also make sure that allowing non-latin characters won't cause a compatibility issue with a third-party
 plugins or client-side software.
 
 == Adding versions
@@ -308,7 +309,7 @@ If you're using Rails, create an initializer for this:
 
     config/initializers/carrierwave.rb
 
-== Testing CarrierWave
+== Testing with CarrierWave
 
 It's a good idea to test you uploaders in isolation. In order to speed up your
 tests, it's recommended to switch off processing in your tests, and to use the
@@ -365,7 +366,8 @@ Fog[http://github.com/geemus/fog] is used to support Amazon S3. Ensure you have 
     gem install fog
 
 You'll need to provide your fog_credentials and a fog_directory (also known as a bucket) in an initializer.
-You can also pass in additional options, as documented fully in lib/storage/fog.rb. Here's a full example:
+For the sake of performance it is assumed that the directory already exists, so please create it if need be.
+You can also pass in additional options, as documented fully in lib/carrierwave/storage/fog.rb. Here's a full example:
 
     CarrierWave.configure do |config|
       config.fog_credentials = {
@@ -394,7 +396,8 @@ Fog[http://github.com/geemus/fog] is used to support Rackspace Cloud Files. Ensu
 
     gem install fog
 
-You'll need to configure a directory (also known as a container), access id and secret key like this in an initializer:
+You'll need to configure a directory (also known as a container), username and api key in the initializer.
+For the sake of performance it is assumed that the directory already exists, so please create it if need be.
 
     CarrierWave.configure do |config|
       config.fog_credentials = {
@@ -426,7 +429,8 @@ Fog[http://github.com/geemus/fog] is used to support Google Storage for Develope
 
     gem install fog
 
-You'll need to configure a directory (also known as a bucket), access id and secret key like this in an initializer:
+You'll need to configure a directory (also known as a bucket), access key id and secret access key in the initialiazer.
+For the sake of performance it is assumed that the directory already exists, so please create it if need be.
 
     CarrierWave.configure do |config|
       config.fog_credentials = {
@@ -564,6 +568,36 @@ your translations file:
         carrierwave_processing_error: 'Cannot resize image.'
         carrierwave_integrity_error: 'Not an image.'
 
+== Contributing to CarrierWave
+
+CarrierWave thrives on a large number of {contributors}[https://github.com/jnicklas/carrierwave/contributors],
+and pull requests are very welcome. Before submitting a pull request, please make sure that your changes are well tested.
+
+You'll need to install bundler and the gem dependencies:
+
+    gem install bundler
+    bundle install
+
+You should now be able to run the local tests:
+
+    bundle exec rake
+
+You can also run the remote specs by creating a ~/.fog file:
+
+    :carrierwave:
+      :aws_access_key_id: xxx
+      :aws_secret_access_key: yyy
+      :rackspace_username: xxx
+      :rackspace_api_key: yyy
+      :google_storage_access_key_id: xxx
+      :google_storage_secret_access_key: yyy
+
+You should now be able to run the remote tests:
+
+    REMOTE=true bundle exec rake
+
+Please test with the latest Ruby 1.8.x and 1.9.x versions using RVM if possible.
+
 == License
 
 Copyright (c) 2008 Jonas Nicklas
@@ -586,34 +620,3 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-== Development
-
-In order to setup a development environment and run the specs, you'll
-need to install bundler:
-
-    gem install bundler
-
-And then install the dependencies:
-
-    bundle install
-
-You should now be able to run the tests:
-
-    bundle exec rake
-
-You can also run the remote specs by creating a ~/.fog file:
-
-    :carrierwave:
-      :aws_access_key_id: xxx
-      :aws_secret_access_key: yyy
-      :rackspace_username: xxx
-      :rackspace_api_key: yyy
-      :google_storage_access_key_id: xxx
-      :google_storage_secret_access_key: yyy
-
-And then running the following, providing your credentials again (hopefully this is only temporary):
-
-    FOG_MOCK=false S3_SPEC=true CLOUDFILES_SPEC=true CARRIERWAVE_DIRECTORY= S3_ACCESS_KEY_ID= S3_SECRET_ACCESS_KEY= CLOUD_FILES_USER_NAME= CLOUD_FILES_API_KEY= bundle exec rake
-
-Issues are reported on GitHub, pull requests are very welcome!
